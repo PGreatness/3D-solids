@@ -1,6 +1,6 @@
 from display import *
 from draw import *
-from parser import *
+from pyparser import *
 from matrix import *
 import math
 

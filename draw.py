@@ -1,9 +1,71 @@
 from display import *
 from matrix import *
 from gmath import *
+from random import randint as rand
 
 def scanline_convert(polygons, i, screen, zbuffer ):
-    pass
+    curr_tri = polygons[ i:i + 3 ]
+    maxYVal = max([ curr_tri[x][1] for x in range(3) ])
+    minYVal = min([ curr_tri[x][1] for x in range(3) ])
+
+    top = None
+    bottom = None
+
+    for item in curr_tri:
+        if item[1] == maxYVal:
+            top = item
+            curr_tri.remove(item)
+            break
+    for item in curr_tri:
+        if item[1] == minYVal:
+            bottom = item
+            curr_tri.remove(item)
+            break
+
+    middle = [ x for x in curr_tri if x != top or x != bottom ][0]
+
+    botX = bottom[0]
+    midX = middle[0]
+    topX = top[0]
+
+    botY = bottom[1]
+    midY = middle[1]
+    topY = top[1]
+
+    botZ = bottom[2]
+    midZ = middle[2]
+    topZ = middle[2]
+
+    x1 = botX
+    y1 = botY
+    z1 = botZ
+
+    colors = [ rand(0, 255), rand(0, 255), rand(0, 255) ]
+
+    while botY < midY:
+        draw_line(int(botX), int(botY), int(botZ), int(x1), int(y1), int(z1), screen, zbuffer, colors)
+
+        botY += 1
+
+        if topY != botY:
+            botX += (topX - botX) / (topY - botY)
+            botZ += (topZ - botZ) / (topY - botY)
+        if botY != midY:
+            x1 += (midX - botX) / (midY - botY)
+            z1 += (midZ - botZ) / (midY - botY)
+
+    while botY < topY:
+        draw_line(int(botX), int(botY), int(botZ), int(x1), int(y1), int(z1), screen, zbuffer, colors)
+
+        botY += 1
+
+        if topY != botY:
+            botX += (topX - botX) / (topY - botY)
+            botZ += (topZ - botZ) / (topY - botY)
+        if botY != midY:
+            midX += (midX - botX) / (midY - botY)
+            midZ += (midZ - botZ) / (midY - botY)
+
 
 def add_polygon( polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2 ):
     add_point(polygons, x0, y0, z0)
@@ -21,6 +83,7 @@ def draw_polygons( polygons, screen, zbuffer, color ):
         normal = calculate_normal(polygons, point)[:]
         #print normal
         if normal[2] > 0:
+            """
             draw_line( int(polygons[point][0]),
                        int(polygons[point][1]),
                        polygons[point][2],
@@ -42,6 +105,8 @@ def draw_polygons( polygons, screen, zbuffer, color ):
                        int(polygons[point+2][1]),
                        polygons[point+2][2],
                        screen, zbuffer, color)
+            """
+            scanline_convert(polygons, point, screen, zbuffer)
         point+= 3
 
 
@@ -256,12 +321,7 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
 
     #swap points if going right -> left
     if x0 > x1:
-        xt = x0
-        yt = y0
-        x0 = x1
-        y0 = y1
-        x1 = xt
-        y1 = yt
+        x0,y0,z0,x1,y1,z1 = x1,y1,z1,x0,y0,z0
 
     x = x0
     y = y0
@@ -305,8 +365,14 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
             loop_start = y1
             loop_end = y
 
+    z = z0
+    if x1 != x0 and (y1 - y0) / (x1 - x0) > -1 and (y1 - y0) / (x1 - x0) < 1:
+        dz = (z1 - z0) / (x1 - x0)
+    else:
+        if y1 != y0:
+            dz = (z1 - z0) / math.fabs(y1 - y0)
     while ( loop_start < loop_end ):
-        plot( screen, zbuffer, color, x, y, 0 )
+        plot( screen, zbuffer, color, x, y, z )
         if ( (wide and ((A > 0 and d > 0) or (A < 0 and d < 0))) or
              (tall and ((A > 0 and d < 0) or (A < 0 and d > 0 )))):
 
@@ -318,4 +384,3 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
             y+= dy_east
             d+= d_east
         loop_start+= 1
-    plot( screen, zbuffer, color, x, y, 0 )

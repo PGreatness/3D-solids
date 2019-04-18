@@ -7,4 +7,18 @@ rotate
 x 20
 box
 0 0 0 100 100 100
+push
+move
+150 200 0
+rotate
+y 60
+sphere
+0 0 0 50
+torus
+0 0 0 10 50
+push
+move
+-100 0 0
+box
+0 0 0 -450 10 10
 display

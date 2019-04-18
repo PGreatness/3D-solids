@@ -1,70 +1,73 @@
 from display import *
 from matrix import *
 from gmath import *
-from random import randint as rand
+import random
+import math
 
 def scanline_convert(polygons, i, screen, zbuffer ):
-    curr_tri = polygons[ i:i + 3 ]
-    maxYVal = max([ curr_tri[x][1] for x in range(3) ])
-    minYVal = min([ curr_tri[x][1] for x in range(3) ])
+    vertices = polygons[ i : i + 3 ]
+
+    coors_y = [ vertices[x][1] for x in range(3) ]
+
+    max_Y = max(coors_y)
+    min_Y = min(coors_y)
 
     top = None
     bottom = None
 
-    for item in curr_tri:
-        if item[1] == maxYVal:
-            top = item
-            curr_tri.remove(item)
-            break
-    for item in curr_tri:
-        if item[1] == minYVal:
-            bottom = item
-            curr_tri.remove(item)
-            break
+    for element in vertices:
+      if element[1] == max_Y:
+        top = element
+        vertices.remove(element)
+        break
 
-    middle = [ x for x in curr_tri if x != top or x != bottom ][0]
+    for element in vertices:
+      if element[1] == min_Y:
+        bottom = element
+        vertices.remove(element)
+        break
 
-    botX = bottom[0]
-    midX = middle[0]
-    topX = top[0]
+    middle = vertices[0]
 
-    botY = bottom[1]
-    midY = middle[1]
-    topY = top[1]
+    bot_X = bottom[0]
+    dX = bottom[0]
+    mid_X = middle[0]
 
-    botZ = bottom[2]
-    midZ = middle[2]
-    topZ = middle[2]
+    bot_Y = bottom[1]
+    mid_Y = middle[1]
+    top_Y = top[1]
 
-    x1 = botX
-    y1 = botY
-    z1 = botZ
+    bot_Z = bottom[2]
+    dZ = bottom[2]
+    mid_Z = middle[2]
 
-    colors = [ rand(0, 255), rand(0, 255), rand(0, 255) ]
+    colors = [ random.randint(0,255), random.randint(0,255), random.randint(0,255) ]
 
-    while botY < midY:
-        draw_line(int(botX), int(botY), int(botZ), int(x1), int(y1), int(z1), screen, zbuffer, colors)
+    while bot_Y < mid_Y:
+      draw_line(int(bot_X), int(bot_Y), bot_Z, int(dX), int(bot_Y), dZ, screen, zbuffer, colors)
 
-        botY += 1
+      bot_Y += 1
 
-        if topY != botY:
-            botX += (topX - botX) / (topY - botY)
-            botZ += (topZ - botZ) / (topY - botY)
-        if botY != midY:
-            x1 += (midX - botX) / (midY - botY)
-            z1 += (midZ - botZ) / (midY - botY)
+      if (top[1] != bottom[1]):
+        bot_X += (top[0]-bottom[0])/(top[1]-bottom[1])
+        bot_Z += (top[2]-bottom[2])/(top[1]-bottom[1])
 
-    while botY < topY:
-        draw_line(int(botX), int(botY), int(botZ), int(x1), int(y1), int(z1), screen, zbuffer, colors)
+      if (middle[1] != bottom[1]):
+        dX += (middle[0]-bottom[0])/(middle[1]-bottom[1])
+        dZ += (middle[2]-bottom[2])/(middle[1]-bottom[1])
 
-        botY += 1
+    while bot_Y < top_Y:
+      draw_line(int(bot_X), int(bot_Y), bot_Z, int(mid_X), int(bot_Y), mid_Z, screen, zbuffer, colors)
 
-        if topY != botY:
-            botX += (topX - botX) / (topY - botY)
-            botZ += (topZ - botZ) / (topY - botY)
-        if botY != midY:
-            midX += (midX - botX) / (midY - botY)
-            midZ += (midZ - botZ) / (midY - botY)
+      bot_Y += 1
+
+      if (top[1] != bottom[1]):
+        bot_X += (top[0]-bottom[0])/(top[1]-bottom[1])
+        bot_Z += (top[2]-bottom[2])/(top[1]-bottom[1])
+
+      if (top[1] != middle[1]):
+        mid_X += (top[0]-middle[0])/(top[1]-middle[1])
+        mid_Z += (top[2]-middle[2])/(top[1]-middle[1])
 
 
 def add_polygon( polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2 ):
@@ -366,21 +369,22 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
             loop_end = y
 
     z = z0
-    if x1 != x0 and (y1 - y0) / (x1 - x0) > -1 and (y1 - y0) / (x1 - x0) < 1:
-        dz = (z1 - z0) / (x1 - x0)
-    else:
-        if y1 != y0:
-            dz = (z1 - z0) / math.fabs(y1 - y0)
+    if x1!=x0 and ((y1-y0)/(x1-x0))>-1 and ((y1-y0)/(x1-x0))<1:
+      dz = (z1-z0)/(x1-x0)
+    elif y1!=y0:
+      dz = (z1-z0)/math.abs(y1-y0)
     while ( loop_start < loop_end ):
-        plot( screen, zbuffer, color, x, y, z )
-        if ( (wide and ((A > 0 and d > 0) or (A < 0 and d < 0))) or
-             (tall and ((A > 0 and d < 0) or (A < 0 and d > 0 )))):
+      plot( screen, zbuffer, color, x, y, z )
+      z += dz
+      if ( (wide and ((A > 0 and d > 0) or (A < 0 and d < 0))) or
+           (tall and ((A > 0 and d < 0) or (A < 0 and d > 0 )))):
 
-            x+= dx_northeast
-            y+= dy_northeast
-            d+= d_northeast
-        else:
-            x+= dx_east
-            y+= dy_east
-            d+= d_east
-        loop_start+= 1
+          x+= dx_northeast
+          y+= dy_northeast
+          d+= d_northeast
+      else:
+          x+= dx_east
+          y+= dy_east
+          d+= d_east
+      loop_start+= 1
+
